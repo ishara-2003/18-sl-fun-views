@@ -94,7 +94,9 @@
         let socialLinks = localStorage.getItem('socialLinks') || '';
         let isUnlocked = localStorage.getItem('unlocked') === 'true';
         let currentCategory = '';
-        const OWNER_PASSWORD = 'admin123'; 
+        const OWNER_PASSWORD = 'ishu2985gamega321$'; // Updated password
+
+        // Initial Load: Check URL for Owner Mode
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'owner') {
@@ -107,7 +109,7 @@
             updateWarningDisplay();
         });
 
-       
+        // Switch to Owner (Password Protected)
         function switchToOwner() {
             const password = prompt('Owner Password Enter කරන්න:');
             if (password === OWNER_PASSWORD) {
@@ -115,29 +117,31 @@
                 document.getElementById('user').classList.remove('active');
                 document.getElementById('bankDetails').value = bankDetails;
                 document.getElementById('socialLinks').value = socialLinks;
-                document.getElementById('ownerBtn').style.display = 'inline';
+                document.getElementById('ownerBtn').style.display = 'inline'; // Show for owner
                 displayVideos();
+                window.history.pushState({}, '', '?mode=owner'); // Update URL
             } else {
                 alert('අසත්‍ය Password! Owner access නැහැ.');
                 switchToUser();
             }
         }
 
-        
+        // Switch to User
         function switchToUser() {
             document.getElementById('user').classList.add('active');
             document.getElementById('owner').classList.remove('active');
-            document.getElementById('ownerBtn').style.display = 'none'; 
+            document.getElementById('ownerBtn').style.display = 'none'; // Hide for users
+            window.history.pushState({}, '', window.location.pathname); // Clear URL params
             displayUserSocialLinks();
             updateWarningDisplay();
         }
 
-      
+        // Update Warning Display (Show after unlock)
         function updateWarningDisplay() {
             document.getElementById('warning').style.display = isUnlocked ? 'block' : 'none';
         }
 
-       
+        // Owner: Video Upload
         function uploadVideo() {
             try {
                 const file = document.getElementById('videoFile').files[0];
@@ -156,14 +160,14 @@
             }
         }
 
-       
+        // Owner: Save Bank Details (Hidden - For Verification Only)
         function saveBankDetails() {
             bankDetails = document.getElementById('bankDetails').value;
             localStorage.setItem('bankDetails', bankDetails);
             alert('Bank details saved! (Hidden - User ට private දෙන්න.)');
         }
 
-        
+        // Owner: Save Social Links
         function saveSocialLinks() {
             socialLinks = document.getElementById('socialLinks').value;
             localStorage.setItem('socialLinks', socialLinks);
@@ -171,7 +175,7 @@
             displayUserSocialLinks();
         }
 
-       
+        // Display Owner Videos
         function displayVideos() {
             const list = document.getElementById('videoList');
             list.innerHTML = '';
@@ -183,7 +187,7 @@
             });
         }
 
-       
+        // Display Social Links in User Dashboard
         function displayUserSocialLinks() {
             const display = document.getElementById('socialDisplay');
             const container = document.getElementById('userSocialLinks');
