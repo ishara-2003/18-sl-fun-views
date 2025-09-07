@@ -1,4 +1,3 @@
-
 <html lang="si">
 <head>
     <meta charset="UTF-8">
@@ -25,16 +24,17 @@
         .social-links { background: #e7f3ff; padding: 10px; border: 1px solid #bee5eb; margin: 10px 0; }
         .social-links a { color: #007bff; text-decoration: none; }
         .social-links a:hover { text-decoration: underline; }
+        #ownerBtn { display: none; } /* Hide owner button for users */
     </style>
 </head>
 <body>
     <div class="container">
         <h1>මගේ Video Site</h1>
-       
-        <!-- Owner/User Switch -->
-        <button onclick="switchToOwner()">Owner Mode (Password ඕනේ)</button>
+        
+        <!-- Owner/User Switch (Owner Hidden) -->
+        <button id="ownerBtn" onclick="switchToOwner()">Owner Mode (Password ඕනේ)</button>
         <button onclick="switchToUser()">User Mode</button>
-       
+        
         <!-- Owner Tab -->
         <div id="owner" class="tab">
             <h2>Owner Panel - Videos Upload කරන්න (Password Protected)</h2>
@@ -45,42 +45,42 @@
                 <option value="straight">Straight</option>
             </select>
             <button onclick="uploadVideo()">Upload Video</button>
-           
+            
             <h3>ඔබේ Bank Details Enter කරන්න (Private - User ට Manual දෙන්න)</h3>
             <textarea id="bankDetails" placeholder="Bank Name: XYZ Bank&#10;Account No: 123456789" rows="3"></textarea>
             <button onclick="saveBankDetails()">Save Bank Details (Hidden Store)</button>
-           
+            
             <h3>Social Media Links Add කරන්න (User ට Contact සඳහා)</h3>
             <textarea id="socialLinks" placeholder="Telegram: t.me/yourusername&#10;WhatsApp: wa.me/947xxxxxxxx&#10;Facebook: facebook.com/yourpage" rows="3"></textarea>
             <button onclick="saveSocialLinks()">Save Social Links</button>
             <p><strong>අනිවාර්යයෙන්ම:</strong> මේ social links user dashboard එකේ පහල show වෙනවා. User ට bank details manual private message එකෙන් දෙන්න. Rs 500 real transfer කරලා slip verify කරන්න.</p>
-           
+            
             <h3>Uploaded Videos (Preview - Owner Only)</h3>
             <div id="videoList"></div>
         </div>
-       
+        
         <!-- User Tab -->
         <div id="user" class="tab active">
-            <div class="warning">අවදානමටයි.. leak or අසබ්‍ය video නැරබීම් ප්‍රචලිත කිරීම නීති විරෝධී වන අතර ..ඔබ එය දැන ගැනීමෙන් හා ප්‍රවේශමෙන් කරන්න</div>
-           
+            <div id="warning" class="warning" style="display:none;">අවදානමටයි.. leak or අසබ්‍ය video නැරබීම් ප්‍රචලිත කිරීම නීති විරෝධී වන අතර ..ඔබ එය දැන ගැනීමෙන් හා ප්‍රවේශමෙන් කරන්න</div>
+            
             <h2>Categories Select කරන්න</h2>
             <button class="category-btn" onclick="showCategory('gay')">Gay</button>
             <button class="category-btn" onclick="showCategory('lesbian')">Lesbian</button>
             <button class="category-btn" onclick="showCategory('straight')">Straight</button>
-           
+            
             <div id="categoryContent"></div>
-           
+            
             <h3>Payment කරන්න (Rs 500)</h3>
             <div class="guide">
                 <strong>උපදෙස්:</strong> සියලු videos unlock කරන්න Rs 500 ownerට manually pay කර bank slip upload කරන්න. (Private message එකෙන් bank details ගන්න.)
             </div>
-           
+            
             <input type="file" id="slipFile" accept="image/*" onchange="uploadSlip()">
             <img id="slipImage" style="display:none;">
             <button id="verifyBtn" onclick="verifySlip()" style="display:none;">Verify Slip</button>
             <p id="paymentStatus"></p>
-           
-            <!-- Social Links in User Dashboard (පහල) -->
+            
+            <!-- Social Links in User Dashboard -->
             <div id="userSocialLinks" class="social-links" style="display:none;">
                 <h4>Payment details ලබාගන්න සම්බන්ධ වෙන්න:</h4>
                 <div id="socialDisplay"></div>
@@ -95,12 +95,16 @@
         let isUnlocked = localStorage.getItem('unlocked') === 'true';
         let currentCategory = '';
         const OWNER_PASSWORD = 'admin123'; 
-
-       
         document.addEventListener('DOMContentLoaded', function() {
-            switchToUser();
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'owner') {
+                switchToOwner();
+            } else {
+                switchToUser();
+            }
             displayVideos();
             displayUserSocialLinks();
+            updateWarningDisplay();
         });
 
        
@@ -111,17 +115,26 @@
                 document.getElementById('user').classList.remove('active');
                 document.getElementById('bankDetails').value = bankDetails;
                 document.getElementById('socialLinks').value = socialLinks;
+                document.getElementById('ownerBtn').style.display = 'inline';
                 displayVideos();
             } else {
                 alert('අසත්‍ය Password! Owner access නැහැ.');
-                switchToUser(); 
+                switchToUser();
             }
         }
 
+        
         function switchToUser() {
             document.getElementById('user').classList.add('active');
             document.getElementById('owner').classList.remove('active');
+            document.getElementById('ownerBtn').style.display = 'none'; 
             displayUserSocialLinks();
+            updateWarningDisplay();
+        }
+
+      
+        function updateWarningDisplay() {
+            document.getElementById('warning').style.display = isUnlocked ? 'block' : 'none';
         }
 
        
@@ -143,19 +156,19 @@
             }
         }
 
-        
+       
         function saveBankDetails() {
             bankDetails = document.getElementById('bankDetails').value;
             localStorage.setItem('bankDetails', bankDetails);
-            alert('Bank details saved! (Hidden - User ට private දෙන්න. Verification සඳහා store වෙලා තියෙනවා.)');
+            alert('Bank details saved! (Hidden - User ට private දෙන්න.)');
         }
 
-       
+        
         function saveSocialLinks() {
             socialLinks = document.getElementById('socialLinks').value;
             localStorage.setItem('socialLinks', socialLinks);
             alert('Social links saved! User dashboard එකේ පහල show වෙනවා.');
-            displayUserSocialLinks(); // Update user display
+            displayUserSocialLinks();
         }
 
        
@@ -164,7 +177,7 @@
             list.innerHTML = '';
             Object.keys(videos).forEach(cat => {
                 list.innerHTML += `<h4>${cat.toUpperCase()}</h4>`;
-                videos[cat].forEach(v => { // Owner preview: All full
+                videos[cat].forEach(v => {
                     list.innerHTML += `<video src="${v.src}" controls></video><br>`;
                 });
             });
@@ -175,7 +188,6 @@
             const display = document.getElementById('socialDisplay');
             const container = document.getElementById('userSocialLinks');
             if (socialLinks) {
-                // Parse lines: Telegram: link, etc.
                 const lines = socialLinks.split('\n').filter(line => line.trim());
                 let html = '';
                 lines.forEach(line => {
@@ -194,40 +206,38 @@
             }
         }
 
-      
+        // User: Show Category Content
         function showCategory(cat) {
             currentCategory = cat;
             const content = document.getElementById('categoryContent');
             content.innerHTML = `<h3>${cat.toUpperCase()} Videos</h3>`;
-           
-         
+            
+            // Free 2 Videos
             videos[cat].slice(0, 2).forEach(v => {
                 content.innerHTML += `<video src="${v.src}" controls></video><br>`;
             });
-           
             
+            // Blurred Teasers if Not Unlocked
             if (!isUnlocked || !bankDetails) {
                 content.innerHTML += `<h4>ඉතුරු Videos (Rs 500 Pay කරලා Unlock - Blurred)</h4>`;
-               
                 videos[cat].slice(2).forEach(v => {
                     content.innerHTML += `<div class="blurred"><video src="${v.src}" style="width:100px;height:60px;"></video></div>`;
                 });
-                
                 const fakeCount = cat === 'gay' ? 20 : cat === 'lesbian' ? 20 : 15;
                 for (let i = 0; i < fakeCount; i++) {
                     content.innerHTML += `<div class="teaser blurred"><img src="https://via.placeholder.com/100x60?text=Secret+Video" alt="Blurred Teaser"></div>`;
                 }
-                document.getElementById('verifyBtn').style.display = 'inline'; // Show verify if needed
+                document.getElementById('verifyBtn').style.display = 'inline';
             } else {
-               
                 videos[cat].forEach(v => {
                     content.innerHTML += `<video src="${v.src}" controls></video><br>`;
                 });
                 content.innerHTML += `<p>ඔක්කොම videos unlocked! Blurs removed.</p>`;
             }
+            updateWarningDisplay();
         }
 
-       
+        // User: Upload Slip
         function uploadSlip() {
             const file = document.getElementById('slipFile').files[0];
             if (!file) return alert('Slip select කරන්න');
@@ -241,32 +251,30 @@
             reader.readAsDataURL(file);
         }
 
-     
+        // User: Verify Slip with OCR
         async function verifySlip() {
             if (!bankDetails) return alert('Owner bank details නැහැ. Private message එකෙන් ගන්න.');
             const slipImg = document.getElementById('slipImage').src;
-            document.getElementById('paymentStatus').innerHTML = 'Scanning slip for owner account match...';
+            document.getElementById('paymentStatus').innerHTML = 'Scanning slip...';
             try {
                 const { data: { text } } = await Tesseract.recognize(slipImg, 'eng');
                 const slipText = text.toLowerCase();
                 const bankLower = bankDetails.toLowerCase();
-               
                 
                 const ownerBank = bankLower.match(/bank[:\s]*([^\n]+)/i)?.[1]?.trim() || '';
                 const ownerAccount = bankLower.match(/account[:\s]*([^\n]+)/i)?.[1]?.trim() || '';
-               
-               
+                
                 const hasBank = slipText.includes(ownerBank.toLowerCase());
                 const hasAccount = slipText.includes(ownerAccount.toLowerCase());
                 const hasAmount = slipText.includes('500') || slipText.includes('rs 500') || slipText.includes('500.00');
-               
+                
                 if (hasBank && hasAccount && hasAmount) {
                     isUnlocked = true;
                     localStorage.setItem('unlocked', 'true');
-                    document.getElementById('paymentStatus').innerHTML = '<span style="color:green;">Verified! Owner account එකට match. Videos unlocked. සල්ලි ownerගේ bank එකට වැටිලා තියෙන්න ඕනේ (manual check කරන්න).</span>';
-                    showCategory(currentCategory); 
+                    document.getElementById('paymentStatus').innerHTML = '<span style="color:green;">Verified! Videos unlocked. සල්ලි ownerගේ bank එකට වැටිලා තියෙන්න ඕනේ (manual check).</span>';
+                    showCategory(currentCategory);
                 } else {
-                    document.getElementById('paymentStatus').innerHTML = '<span style="color:red;">Match නැහැ. Slip එකේ owner bank/account (Rs 500) නිවැරදිද check කරන්න (private details use කරන්න).</span>';
+                    document.getElementById('paymentStatus').innerHTML = '<span style="color:red;">Match නැහැ. Slip එකේ owner bank/account (Rs 500) check කරන්න.</span>';
                 }
             } catch (err) {
                 document.getElementById('paymentStatus').innerHTML = 'OCR Error: ' + err.message + '. Clear slip image use කරන්න.';
@@ -275,4 +283,3 @@
     </script>
 </body>
 </html>
-
