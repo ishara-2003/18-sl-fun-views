@@ -1,0 +1,278 @@
+
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>මගේ Video Site</title>
+    <script src="https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js"></script> <!-- OCR සඳහා -->
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background: #f0f0f0; }
+        .container { max-width: 100%; margin: auto; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        button { padding: 10px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        video { width: 100%; max-width: 300px; height: auto; }
+        .blurred { filter: blur(8px); transition: filter 0.5s; }
+        .blurred:hover { filter: blur(4px); }
+        .teaser { width: 100px; height: 60px; background: #ccc; margin: 5px; display: inline-block; position: relative; overflow: hidden; }
+        .teaser img { width: 100%; height: 100%; object-fit: cover; }
+        .warning { background: #ffdddd; padding: 10px; border: 1px solid red; margin: 10px 0; text-align: center; font-weight: bold; }
+        #slipImage { max-width: 200px; }
+        .unlock-btn { background: green; }
+        .category-btn { background: #28a745; margin: 5px; }
+        .guide { background: #d4edda; padding: 10px; border: 1px solid #c3e6cb; margin: 10px 0; }
+        .social-links { background: #e7f3ff; padding: 10px; border: 1px solid #bee5eb; margin: 10px 0; }
+        .social-links a { color: #007bff; text-decoration: none; }
+        .social-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>මගේ Video Site</h1>
+       
+        <!-- Owner/User Switch -->
+        <button onclick="switchToOwner()">Owner Mode (Password ඕනේ)</button>
+        <button onclick="switchToUser()">User Mode</button>
+       
+        <!-- Owner Tab -->
+        <div id="owner" class="tab">
+            <h2>Owner Panel - Videos Upload කරන්න (Password Protected)</h2>
+            <input type="file" id="videoFile" accept="video/*" onchange="uploadVideo()">
+            <select id="categorySelect">
+                <option value="gay">Gay</option>
+                <option value="lesbian">Lesbian</option>
+                <option value="straight">Straight</option>
+            </select>
+            <button onclick="uploadVideo()">Upload Video</button>
+           
+            <h3>ඔබේ Bank Details Enter කරන්න (Private - User ට Manual දෙන්න)</h3>
+            <textarea id="bankDetails" placeholder="Bank Name: XYZ Bank&#10;Account No: 123456789" rows="3"></textarea>
+            <button onclick="saveBankDetails()">Save Bank Details (Hidden Store)</button>
+           
+            <h3>Social Media Links Add කරන්න (User ට Contact සඳහා)</h3>
+            <textarea id="socialLinks" placeholder="Telegram: t.me/yourusername&#10;WhatsApp: wa.me/947xxxxxxxx&#10;Facebook: facebook.com/yourpage" rows="3"></textarea>
+            <button onclick="saveSocialLinks()">Save Social Links</button>
+            <p><strong>අනිවාර්යයෙන්ම:</strong> මේ social links user dashboard එකේ පහල show වෙනවා. User ට bank details manual private message එකෙන් දෙන්න. Rs 500 real transfer කරලා slip verify කරන්න.</p>
+           
+            <h3>Uploaded Videos (Preview - Owner Only)</h3>
+            <div id="videoList"></div>
+        </div>
+       
+        <!-- User Tab -->
+        <div id="user" class="tab active">
+            <div class="warning">අවදානමටයි.. leak or අසබ්‍ය video නැරබීම් ප්‍රචලිත කිරීම නීති විරෝධී වන අතර ..ඔබ එය දැන ගැනීමෙන් හා ප්‍රවේශමෙන් කරන්න</div>
+           
+            <h2>Categories Select කරන්න</h2>
+            <button class="category-btn" onclick="showCategory('gay')">Gay</button>
+            <button class="category-btn" onclick="showCategory('lesbian')">Lesbian</button>
+            <button class="category-btn" onclick="showCategory('straight')">Straight</button>
+           
+            <div id="categoryContent"></div>
+           
+            <h3>Payment කරන්න (Rs 500)</h3>
+            <div class="guide">
+                <strong>උපදෙස්:</strong> සියලු videos unlock කරන්න Rs 500 ownerට manually pay කර bank slip upload කරන්න. (Private message එකෙන් bank details ගන්න.)
+            </div>
+           
+            <input type="file" id="slipFile" accept="image/*" onchange="uploadSlip()">
+            <img id="slipImage" style="display:none;">
+            <button id="verifyBtn" onclick="verifySlip()" style="display:none;">Verify Slip</button>
+            <p id="paymentStatus"></p>
+           
+            <!-- Social Links in User Dashboard (පහල) -->
+            <div id="userSocialLinks" class="social-links" style="display:none;">
+                <h4>Payment details ලබාගන්න සම්බන්ධ වෙන්න:</h4>
+                <div id="socialDisplay"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let videos = JSON.parse(localStorage.getItem('videos')) || { gay: [], lesbian: [], straight: [] };
+        let bankDetails = localStorage.getItem('bankDetails') || '';
+        let socialLinks = localStorage.getItem('socialLinks') || '';
+        let isUnlocked = localStorage.getItem('unlocked') === 'true';
+        let currentCategory = '';
+        const OWNER_PASSWORD = 'admin123'; 
+
+       
+        document.addEventListener('DOMContentLoaded', function() {
+            switchToUser();
+            displayVideos();
+            displayUserSocialLinks();
+        });
+
+       
+        function switchToOwner() {
+            const password = prompt('Owner Password Enter කරන්න:');
+            if (password === OWNER_PASSWORD) {
+                document.getElementById('owner').classList.add('active');
+                document.getElementById('user').classList.remove('active');
+                document.getElementById('bankDetails').value = bankDetails;
+                document.getElementById('socialLinks').value = socialLinks;
+                displayVideos();
+            } else {
+                alert('අසත්‍ය Password! Owner access නැහැ.');
+                switchToUser(); 
+            }
+        }
+
+        function switchToUser() {
+            document.getElementById('user').classList.add('active');
+            document.getElementById('owner').classList.remove('active');
+            displayUserSocialLinks();
+        }
+
+       
+        function uploadVideo() {
+            try {
+                const file = document.getElementById('videoFile').files[0];
+                if (!file) return alert('Video select කරන්න');
+                const category = document.getElementById('categorySelect').value;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    videos[category].push({ src: e.target.result, id: Date.now() });
+                    localStorage.setItem('videos', JSON.stringify(videos));
+                    alert('Video uploaded!');
+                    displayVideos();
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        
+        function saveBankDetails() {
+            bankDetails = document.getElementById('bankDetails').value;
+            localStorage.setItem('bankDetails', bankDetails);
+            alert('Bank details saved! (Hidden - User ට private දෙන්න. Verification සඳහා store වෙලා තියෙනවා.)');
+        }
+
+       
+        function saveSocialLinks() {
+            socialLinks = document.getElementById('socialLinks').value;
+            localStorage.setItem('socialLinks', socialLinks);
+            alert('Social links saved! User dashboard එකේ පහල show වෙනවා.');
+            displayUserSocialLinks(); // Update user display
+        }
+
+       
+        function displayVideos() {
+            const list = document.getElementById('videoList');
+            list.innerHTML = '';
+            Object.keys(videos).forEach(cat => {
+                list.innerHTML += `<h4>${cat.toUpperCase()}</h4>`;
+                videos[cat].forEach(v => { // Owner preview: All full
+                    list.innerHTML += `<video src="${v.src}" controls></video><br>`;
+                });
+            });
+        }
+
+       
+        function displayUserSocialLinks() {
+            const display = document.getElementById('socialDisplay');
+            const container = document.getElementById('userSocialLinks');
+            if (socialLinks) {
+                // Parse lines: Telegram: link, etc.
+                const lines = socialLinks.split('\n').filter(line => line.trim());
+                let html = '';
+                lines.forEach(line => {
+                    const parts = line.split(':');
+                    if (parts.length >= 2) {
+                        const platform = parts[0].trim();
+                        const link = parts[1].trim();
+                        html += `<strong>${platform}:</strong> <a href="${link}" target="_blank">${link}</a><br>`;
+                    }
+                });
+                display.innerHTML = html;
+                container.style.display = 'block';
+            } else {
+                display.innerHTML = '<p>Social links නැහැ. Owner ට contact කරන්න.</p>';
+                container.style.display = 'block';
+            }
+        }
+
+      
+        function showCategory(cat) {
+            currentCategory = cat;
+            const content = document.getElementById('categoryContent');
+            content.innerHTML = `<h3>${cat.toUpperCase()} Videos</h3>`;
+           
+         
+            videos[cat].slice(0, 2).forEach(v => {
+                content.innerHTML += `<video src="${v.src}" controls></video><br>`;
+            });
+           
+            
+            if (!isUnlocked || !bankDetails) {
+                content.innerHTML += `<h4>ඉතුරු Videos (Rs 500 Pay කරලා Unlock - Blurred)</h4>`;
+               
+                videos[cat].slice(2).forEach(v => {
+                    content.innerHTML += `<div class="blurred"><video src="${v.src}" style="width:100px;height:60px;"></video></div>`;
+                });
+                
+                const fakeCount = cat === 'gay' ? 20 : cat === 'lesbian' ? 20 : 15;
+                for (let i = 0; i < fakeCount; i++) {
+                    content.innerHTML += `<div class="teaser blurred"><img src="https://via.placeholder.com/100x60?text=Secret+Video" alt="Blurred Teaser"></div>`;
+                }
+                document.getElementById('verifyBtn').style.display = 'inline'; // Show verify if needed
+            } else {
+               
+                videos[cat].forEach(v => {
+                    content.innerHTML += `<video src="${v.src}" controls></video><br>`;
+                });
+                content.innerHTML += `<p>ඔක්කොම videos unlocked! Blurs removed.</p>`;
+            }
+        }
+
+       
+        function uploadSlip() {
+            const file = document.getElementById('slipFile').files[0];
+            if (!file) return alert('Slip select කරන්න');
+            if (!bankDetails) return alert('Owner bank details first save කරන්න (private message එකෙන් ගෙන transfer කරන්න)');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('slipImage').src = e.target.result;
+                document.getElementById('slipImage').style.display = 'block';
+                document.getElementById('verifyBtn').style.display = 'inline';
+            };
+            reader.readAsDataURL(file);
+        }
+
+     
+        async function verifySlip() {
+            if (!bankDetails) return alert('Owner bank details නැහැ. Private message එකෙන් ගන්න.');
+            const slipImg = document.getElementById('slipImage').src;
+            document.getElementById('paymentStatus').innerHTML = 'Scanning slip for owner account match...';
+            try {
+                const { data: { text } } = await Tesseract.recognize(slipImg, 'eng');
+                const slipText = text.toLowerCase();
+                const bankLower = bankDetails.toLowerCase();
+               
+                
+                const ownerBank = bankLower.match(/bank[:\s]*([^\n]+)/i)?.[1]?.trim() || '';
+                const ownerAccount = bankLower.match(/account[:\s]*([^\n]+)/i)?.[1]?.trim() || '';
+               
+               
+                const hasBank = slipText.includes(ownerBank.toLowerCase());
+                const hasAccount = slipText.includes(ownerAccount.toLowerCase());
+                const hasAmount = slipText.includes('500') || slipText.includes('rs 500') || slipText.includes('500.00');
+               
+                if (hasBank && hasAccount && hasAmount) {
+                    isUnlocked = true;
+                    localStorage.setItem('unlocked', 'true');
+                    document.getElementById('paymentStatus').innerHTML = '<span style="color:green;">Verified! Owner account එකට match. Videos unlocked. සල්ලි ownerගේ bank එකට වැටිලා තියෙන්න ඕනේ (manual check කරන්න).</span>';
+                    showCategory(currentCategory); 
+                } else {
+                    document.getElementById('paymentStatus').innerHTML = '<span style="color:red;">Match නැහැ. Slip එකේ owner bank/account (Rs 500) නිවැරදිද check කරන්න (private details use කරන්න).</span>';
+                }
+            } catch (err) {
+                document.getElementById('paymentStatus').innerHTML = 'OCR Error: ' + err.message + '. Clear slip image use කරන්න.';
+            }
+        }
+    </script>
+</body>
+</html>
+
